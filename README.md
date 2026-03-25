@@ -15,15 +15,37 @@ A modern, reliable PHP obfuscator for copyright protection. Supporting PHP 7.4 t
 
 ## Installation
 
+### Via Composer
 ```bash
 composer require iserter/php-obfuscator --dev
 ```
 
-Or install globally:
-
+### Via Docker
+You can run the obfuscator without installing PHP or Composer locally:
 ```bash
-composer global require iserter/php-obfuscator
+docker run --rm -v $(pwd):/app iserter/php-obfuscator src/ -o out/
 ```
+
+## GitHub Action
+
+Protect your code automatically in your CI/CD pipeline:
+
+```yaml
+steps:
+  - uses: iserter/php-obfuscator@v1
+    with:
+      source: 'src'
+      output: 'dist'
+```
+
+## Documentation
+
+For detailed information, check out our **Developer Guides**:
+
+- [Getting Started](docs/dev-guide/getting-started.md) - Installation and basic usage.
+- [Configuration Guide](docs/dev-guide/configuration.md) - Deep dive into all obfuscation options.
+- [Troubleshooting](docs/dev-guide/troubleshooting.md) - Dealing with dynamic calls, Reflection, and more.
+- [Architecture](docs/architecture/pipeline.md) - How the pipeline works.
 
 ## Quick Start
 

@@ -79,8 +79,44 @@ function _v1000($_v1001) {
 _v1000("World");
 ```
 
-## Next Steps
+## Running with Docker
 
+You can use the official Docker image to run the obfuscator without installing PHP or Composer locally:
+
+```bash
+docker run --rm -v $(pwd):/app iserter/php-obfuscator src/ -o out/
+```
+
+-   `-v $(pwd):/app`: Mounts your current directory to `/app` inside the container.
+-   `src/`: The directory to obfuscate.
+-   `-o out/`: The output directory.
+
+## GitHub Action Integration
+
+To automate obfuscation in your CI/CD pipeline, add this step to your GitHub Actions workflow:
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+
+  - name: Obfuscate PHP Source
+    uses: iserter/php-obfuscator@v1
+    with:
+      source: 'src'
+      output: 'dist'
+      clean: true
+
+  - name: Upload Obfuscated Code
+    uses: actions/upload-artifact@v4
+    with:
+      name: obfuscated-code
+      path: dist/
+```
+
+This ensures your code is protected before it is ever deployed or shared as an artifact.
+
+## Next Steps
+...
 -   Check the [Configuration Guide](configuration.md) to customize how your code is obfuscated.
 -   Learn how to [Exclude Symbols](configuration.md#ignore-lists) that should not be renamed (e.g., public APIs or vendor-facing code).
 -   Read about the [Architecture](../architecture/pipeline.md) if you want to extend the tool with custom transformers.

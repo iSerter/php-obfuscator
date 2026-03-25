@@ -1,0 +1,40 @@
+name: 'PHP Obfuscator'
+description: 'Obfuscate your PHP source code as part of your CI/CD pipeline.'
+author: 'iSerter'
+inputs:
+  source:
+    description: 'Path to the PHP file or directory to obfuscate.'
+    required: true
+    default: 'src'
+  output:
+    description: 'Path where the obfuscated files will be saved.'
+    required: true
+    default: 'obfuscated'
+  config:
+    description: 'Path to a custom config YAML file.'
+    required: false
+  clean:
+    description: 'Clean the output directory before processing.'
+    required: false
+    default: 'false'
+  force:
+    description: 'Force re-obfuscation of all files (ignores timestamps).'
+    required: false
+    default: 'false'
+  additional-args:
+    description: 'Any other CLI arguments to pass to the obfuscator.'
+    required: false
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.source }}
+    - '--output'
+    - ${{ inputs.output }}
+    - ${{ inputs.config && format('--config={0}', inputs.config) || '' }}
+    - ${{ inputs.clean == 'true' && '--clean' || '' }}
+    - ${{ inputs.force == 'true' && '--force' || '' }}
+    - ${{ inputs.additional-args }}
+branding:
+  icon: 'shield'
+  color: 'blue'
