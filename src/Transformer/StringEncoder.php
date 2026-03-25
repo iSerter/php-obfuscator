@@ -14,6 +14,7 @@ use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\ClassConst;
 use PhpParser\Node\Stmt\Const_;
 use PhpParser\Node\Stmt\EnumCase;
+use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
@@ -43,7 +44,7 @@ final class StringEncoder extends NodeVisitorAbstract implements TransformerInte
     public function enterNode(Node $node): ?int
     {
         // Skip strings in constant-only contexts (PHP requires compile-time constant expressions)
-        if ($node instanceof EnumCase || $node instanceof Param || $node instanceof ClassConst || $node instanceof Const_) {
+        if ($node instanceof EnumCase || $node instanceof Param || $node instanceof ClassConst || $node instanceof Const_ || $node instanceof Property) {
             return NodeTraverser::DONT_TRAVERSE_CURRENT_AND_CHILDREN;
         }
         return null;
