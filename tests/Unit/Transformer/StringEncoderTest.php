@@ -38,6 +38,36 @@ PHP;
         $this->assertStringContainsString('_d(', $output);
     }
 
+    public function testEncodesHeredocAndNowdoc(): void
+    {
+        $code = <<<'PHP'
+<?php
+$h = <<<HEREDOC
+hello world
+HEREDOC;
+$n = <<<'NOWDOC'
+nowdoc content
+NOWDOC;
+PHP;
+        $parserFactory = new ParserFactory();
+        $config = new Configuration();
+        $scrambler = new NumericScrambler();
+        $context = new ObfuscationContext($config, $scrambler);
+        $parser = $parserFactory->createParser($config);
+        $stmts = $parser->parse($code);
+        $this->assertNotNull($stmts);
+
+        $transformer = new StringEncoder();
+        $transformed = $transformer->transform($stmts, $context);
+
+        $printer = new ObfuscatedPrinter();
+        $output = $printer->prettyPrintFile($transformed);
+
+        $this->assertStringNotContainsString('hello world', $output);
+        $this->assertStringNotContainsString('nowdoc content', $output);
+        $this->assertStringContainsString('_d(', $output);
+    }
+
     public function testDecodingWorks(): void
     {
         $code = <<<'PHP'
@@ -77,5 +107,31 @@ PHP;
         eval($decoder . $output);
 
         $this->assertSame('hello', $val);
+    }
+
+    public function testEncodesInterpolatedString(): void
+    {
+        $code = <<<'PHP'
+<?php
+$world = "world";
+echo "hello $world";
+PHP;
+        $parserFactory = new ParserFactory();
+        $config = new Configuration();
+        $scrambler = new NumericScrambler();
+        $context = new ObfuscationContext($config, $scrambler);
+        $parser = $parserFactory->createParser($config);
+        $stmts = $parser->parse($code);
+        $this->assertNotNull($stmts);
+
+        $transformer = new StringEncoder();
+        $transformed = $transformer->transform($stmts, $context);
+
+        $printer = new ObfuscatedPrinter();
+        $output = $printer->prettyPrintFile($transformed);
+
+        // It might NOT encode the whole thing as one call, but parts of it.
+        $this->assertStringNotContainsString('hello ', $output);
+        $this->assertStringContainsString('_d(', $output);
     }
 }

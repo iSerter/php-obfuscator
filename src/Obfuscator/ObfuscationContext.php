@@ -15,6 +15,9 @@ final class ObfuscationContext
     /** @var array<string, string> */
     private array $symbolMap = [];
 
+    /** @var array<string, string> */
+    private array $reverseMap = [];
+
     public ?string $currentFilePath = null;
 
     public function __construct(
@@ -32,6 +35,33 @@ final class ObfuscationContext
     public function setSymbol(string $original, string $scrambled): void
     {
         $this->symbolMap[$original] = $scrambled;
+        $this->reverseMap[$scrambled] = $original;
+    }
+
+    public function isScrambledUsed(string $scrambled): bool
+    {
+        return isset($this->reverseMap[$scrambled]);
+    }
+
+    public function generateUniqueSymbol(string $original): string
+    {
+        $symbol = $this->getSymbol($original);
+        if ($symbol !== null) {
+            return $symbol;
+        }
+
+        $attempts = 0;
+        do {
+            $scrambled = $this->scrambler->scramble($original);
+            $attempts++;
+            if ($attempts > 100) {
+                // Highly unlikely with random scrambler, but possible with others if poorly designed
+                throw new \RuntimeException("Could not generate a unique scrambled name for: $original");
+            }
+        } while ($this->isScrambledUsed($scrambled));
+
+        $this->setSymbol($original, $scrambled);
+        return $scrambled;
     }
 
     /**
@@ -48,5 +78,6 @@ final class ObfuscationContext
     public function setSymbolMap(array $symbolMap): void
     {
         $this->symbolMap = $symbolMap;
+        $this->reverseMap = array_flip($symbolMap);
     }
 }

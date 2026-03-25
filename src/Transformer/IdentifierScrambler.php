@@ -89,6 +89,51 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
             }
         }
 
+        // Class methods
+        if ($node instanceof Node\Stmt\ClassMethod) {
+            $originalName = $node->name->toString();
+            if ($this->shouldScrambleFunction($originalName)) {
+                $node->name = new Identifier($this->getScrambledName($originalName, true));
+            }
+        }
+
+        // Properties
+        if ($node instanceof Node\Stmt\Property) {
+            foreach ($node->props as $prop) {
+                $originalName = $prop->name->toString();
+                if ($this->shouldScrambleVariable($originalName)) {
+                    $prop->name = new Node\VarLikeIdentifier($this->getScrambledName($originalName, true));
+                }
+            }
+        }
+
+        // Constants and Class Constants
+        if ($node instanceof Node\Stmt\Const_ || $node instanceof Node\Stmt\ClassConst) {
+            foreach ($node->consts as $const) {
+                $originalName = $const->name->toString();
+                if ($this->shouldScrambleFunction($originalName)) { // Using shouldScrambleFunction as a proxy for constants
+                    $const->name = new Identifier($this->getScrambledName($originalName, true));
+                }
+            }
+        }
+
+        // Enum cases
+        if ($node instanceof Node\Stmt\EnumCase) {
+            $originalName = $node->name->toString();
+            if ($this->shouldScrambleClass($originalName)) { // Using shouldScrambleClass as a proxy for enums
+                $node->name = new Identifier($this->getScrambledName($originalName, true));
+            }
+        }
+
+        // Identifiers in expressions (MethodCall, PropertyFetch, ConstFetch, etc.)
+        if ($node instanceof Identifier) {
+            $originalName = $node->toString();
+            $scrambled = $this->context->getSymbol($originalName);
+            if ($scrambled !== null) {
+                return new Identifier($scrambled);
+            }
+        }
+
         // Names (usages of classes, etc.)
         if ($node instanceof Name) {
             $originalName = $node->toString();
@@ -97,25 +142,43 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
             if ($scrambled !== null) {
                 return new Name($scrambled);
             }
-        }
 
-        // Named arguments
-        if ($node instanceof Arg && $node->name !== null) {
-            $originalName = $node->name->toString();
-            $scrambled = $this->context->getSymbol($originalName);
-            if ($scrambled !== null) {
-                $node->name = new Identifier($scrambled);
+            // Fallback for namespaced names if scrambleNamespaces is false
+            if (!$this->context->config->scrambleNamespaces && $node->isQualified()) {
+                $lastPart = $node->getLast();
+                $scrambledPart = $this->context->getSymbol($lastPart);
+                if ($scrambledPart !== null) {
+                    $parts = $node->getParts();
+                    $parts[count($parts) - 1] = $scrambledPart;
+                    $className = get_class($node);
+                    return new $className($parts);
+                }
             }
-        }
-
-        // New expression with dynamic class name
-        if ($node instanceof New_ && !($node->class instanceof Name || $node->class instanceof Class_)) {
-            $this->addWarning("New expression with dynamic class name detected. Scrambling might break this.");
         }
 
         // Method call with dynamic name
         if ($node instanceof MethodCall && !($node->name instanceof Identifier)) {
             $this->addWarning("Dynamic method call detected. Scrambling might break this.");
+        }
+
+        // Property fetch with dynamic name
+        if ($node instanceof Node\Expr\PropertyFetch && !($node->name instanceof Identifier)) {
+            $this->addWarning("Dynamic property fetch detected. Scrambling might break this.");
+        }
+        
+        // Static property fetch with dynamic name
+        if ($node instanceof Node\Expr\StaticPropertyFetch && !($node->name instanceof Identifier)) {
+            $this->addWarning("Dynamic static property fetch detected. Scrambling might break this.");
+        }
+
+        // Use statements: skip alias scrambling
+        if ($node instanceof Node\Stmt\UseUse && $node->alias !== null) {
+            // Traverse name part manually
+            $result = $this->enterNode($node->name);
+            if ($result instanceof Name) {
+                $node->name = $result;
+            }
+            return $node; // Stop traversing children (alias is a child)
         }
 
         return null;
@@ -157,6 +220,10 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
 
     private function shouldScrambleFunction(string $name): bool
     {
+        if (str_starts_with($name, '__')) {
+            return false;
+        }
+
         if (in_array($name, $this->context->config->ignoreFunctions, true)) {
             return false;
         }
@@ -166,12 +233,10 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
 
     private function getScrambledName(string $original, bool $createIfMissing = false): string
     {
-        $scrambled = $this->context->getSymbol($original);
-        if ($scrambled === null && $createIfMissing) {
-            $scrambled = $this->context->scrambler->scramble($original);
-            $this->context->setSymbol($original, $scrambled);
+        if ($createIfMissing) {
+            return $this->context->generateUniqueSymbol($original);
         }
 
-        return $scrambled ?? $original;
+        return $this->context->getSymbol($original) ?? $original;
     }
 }

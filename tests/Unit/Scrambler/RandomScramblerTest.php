@@ -28,4 +28,20 @@ final class RandomScramblerTest extends TestCase
 
         $this->assertCount(100, array_unique($names));
     }
+
+    public function testCollisionResistanceWithContext(): void
+    {
+        $scrambler = new RandomScrambler(6);
+        $config = new \ISerter\PhpObfuscator\Config\Configuration();
+        $context = new \ISerter\PhpObfuscator\Obfuscator\ObfuscationContext($config, $scrambler);
+
+        $count = 10000;
+        for ($i = 0; $i < $count; $i++) {
+            $context->generateUniqueSymbol('sym' . $i);
+        }
+
+        $this->assertCount($count, $context->getSymbolMap());
+        // Verify reverse map also has same count
+        $this->assertCount($count, array_unique($context->getSymbolMap()));
+    }
 }

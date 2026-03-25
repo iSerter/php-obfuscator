@@ -130,4 +130,51 @@ final class FileProcessorTest extends TestCase
         $this->assertDirectoryExists($outputDir);
         $this->assertFileExists($outputPath);
     }
+
+    public function testObfuscateFileThrowsExceptionOnNonReadableInput(): void
+    {
+        $inputPath = $this->tempDir . DIRECTORY_SEPARATOR . 'non-readable.php';
+        $outputPath = $this->tempDir . DIRECTORY_SEPARATOR . 'output.php';
+
+        file_put_contents($inputPath, '<?php echo "test";');
+        chmod($inputPath, 0000); // Make it non-readable
+
+        $obfuscator = $this->createMock(ObfuscatorInterface::class);
+        $processor = new FileProcessor($obfuscator);
+        $context = new ObfuscationContext(new Configuration(), $this->createMock(ScramblerInterface::class));
+
+        $this->expectException(FileProcessingException::class);
+        $this->expectExceptionMessage('not readable');
+
+        try {
+            $processor->obfuscateFile($inputPath, $outputPath, $context);
+        } finally {
+            chmod($inputPath, 0644); // Restore to allow cleanup
+        }
+    }
+
+    public function testObfuscateFileThrowsExceptionOnNonWritableOutput(): void
+    {
+        $inputPath = $this->tempDir . DIRECTORY_SEPARATOR . 'input.php';
+        $outputDir = $this->tempDir . DIRECTORY_SEPARATOR . 'non-writable-dir';
+        $outputPath = $outputDir . DIRECTORY_SEPARATOR . 'output.php';
+
+        file_put_contents($inputPath, '<?php echo "test";');
+        mkdir($outputDir, 0555); // Make it non-writable
+
+        $obfuscator = $this->createMock(ObfuscatorInterface::class);
+        $context = new ObfuscationContext(new Configuration(), $this->createMock(ScramblerInterface::class));
+        $obfuscator->method('obfuscate')->willReturn('<?php echo "test";');
+
+        $processor = new FileProcessor($obfuscator);
+
+        $this->expectException(FileProcessingException::class);
+        $this->expectExceptionMessage('Could not write');
+
+        try {
+            $processor->obfuscateFile($inputPath, $outputPath, $context);
+        } finally {
+            chmod($outputDir, 0755); // Restore to allow cleanup
+        }
+    }
 }

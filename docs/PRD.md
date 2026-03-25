@@ -330,6 +330,14 @@ obfuscator:
 - [x] **6.5** Documentation: README with installation, usage, config reference, limitations
 - [x] **Milestone:** Production-ready v1.0 release
 
+#### Phase 7 — Test Coverage & Robustness ([tasks/phase-7-test-coverage.md](../tasks/phase-7-test-coverage.md))
+- [ ] **7.1** Modern PHP Syntax Coverage (8.0-8.5)
+- [ ] **7.2** Transformer Edge Cases (HEREDOC, try-catch, generators)
+- [ ] **7.3** Scrambler Robustness (collisions, determinism)
+- [ ] **7.4** File & System Resilience (encodings, permissions)
+- [ ] **7.5** Integration & Frameworks (mini-project fixture)
+- [ ] **Milestone:** industrial-grade reliability and >95% coverage
+
 ---
 
 ### 10. Key Improvements Over yakpro-po

@@ -23,17 +23,19 @@ final class FileProcessor
     public function obfuscateFile(string $inputPath, string $outputPath, ObfuscationContext $context): void
     {
         if (!is_file($inputPath) || !is_readable($inputPath)) {
-            throw new RuntimeException("Input file not found or not readable: $inputPath");
+            throw new FileProcessingException($inputPath, "Input file not found or not readable: $inputPath");
         }
 
-        $code = file_get_contents($inputPath);
+        $code = @file_get_contents($inputPath);
         if ($code === false) {
-            throw new RuntimeException("Could not read input file: $inputPath");
+            throw new FileProcessingException($inputPath, "Could not read input file: $inputPath");
         }
 
         try {
             $obfuscatedCode = $this->obfuscator->obfuscate($code, $context);
             $this->writeToOutput($outputPath, $obfuscatedCode);
+        } catch (FileProcessingException $e) {
+            throw $e;
         } catch (Exception $e) {
             throw new FileProcessingException($inputPath, $e->getMessage(), (int)$e->getCode(), $e);
         }
@@ -52,7 +54,7 @@ final class FileProcessor
             }
         }
 
-        if (!copy($inputPath, $outputPath)) {
+        if (!@copy($inputPath, $outputPath)) {
             throw new RuntimeException("Could not copy file: $inputPath to $outputPath");
         }
     }
@@ -66,7 +68,7 @@ final class FileProcessor
             }
         }
 
-        if (file_put_contents($outputPath, $content) === false) {
+        if (@file_put_contents($outputPath, $content) === false) {
             throw new RuntimeException("Could not write output file: $outputPath");
         }
     }

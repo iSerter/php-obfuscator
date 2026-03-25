@@ -21,9 +21,12 @@ final class Obfuscator implements ObfuscatorInterface
     public function obfuscate(string $code, ?ObfuscationContext $context = null): string
     {
         if ($context === null) {
-            // This should not happen in a real application, as we want to share context across files.
-            // But for a single file API, it's fine.
             throw new InvalidArgumentException('Obfuscation context is required.');
+        }
+
+        // Strip UTF-8 BOM if present
+        if (str_starts_with($code, "\xEF\xBB\xBF")) {
+            $code = substr($code, 3);
         }
 
         $parser = $this->parserFactory->createParser($context->config);

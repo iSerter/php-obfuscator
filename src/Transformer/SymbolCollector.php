@@ -18,6 +18,7 @@ use PhpParser\NodeVisitorAbstract;
 final class SymbolCollector extends NodeVisitorAbstract implements TransformerInterface
 {
     private ObfuscationContext $context;
+    private ?string $currentNamespace = null;
 
     /**
      * @param Node[] $nodes
@@ -26,6 +27,7 @@ final class SymbolCollector extends NodeVisitorAbstract implements TransformerIn
     public function transform(array $nodes, ObfuscationContext $context): array
     {
         $this->context = $context;
+        $this->currentNamespace = null;
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($this);
@@ -36,7 +38,9 @@ final class SymbolCollector extends NodeVisitorAbstract implements TransformerIn
 
     public function enterNode(Node $node): ?Node
     {
-        if ($node instanceof Class_ && $node->name !== null) {
+        if ($node instanceof Node\Stmt\Namespace_) {
+            $this->currentNamespace = $node->name ? $node->name->toString() : null;
+        } elseif (($node instanceof Class_ || $node instanceof Interface_ || $node instanceof Trait_ || $node instanceof Enum_) && $node->name !== null) {
             $this->addSymbol($node->name->toString());
         } elseif ($node instanceof Function_) {
             $this->addSymbol($node->name->toString());
@@ -47,10 +51,15 @@ final class SymbolCollector extends NodeVisitorAbstract implements TransformerIn
                 $this->addSymbol($prop->name->toString());
             }
         } elseif ($node instanceof Const_) {
-            // Const_ names are strings in php-parser? No, they are identifiers?
-            // Actually, Const_ has an array of consts.
-            // Wait, nikic/php-parser v5: Const_ has an array of Const_ nodes (Wait, it's confusing)
-            // Let's check Node/Stmt/Const_.
+            foreach ($node->consts as $const) {
+                $this->addSymbol($const->name->toString());
+            }
+        } elseif ($node instanceof Node\Stmt\ClassConst) {
+            foreach ($node->consts as $const) {
+                $this->addSymbol($const->name->toString());
+            }
+        } elseif ($node instanceof Node\Stmt\EnumCase) {
+            $this->addSymbol($node->name->toString());
         } elseif ($node instanceof Variable && is_string($node->name)) {
             $this->addSymbol($node->name);
         }
@@ -58,13 +67,27 @@ final class SymbolCollector extends NodeVisitorAbstract implements TransformerIn
         return null;
     }
 
+    public function leaveNode(Node $node)
+    {
+        if ($node instanceof Node\Stmt\Namespace_) {
+            $this->currentNamespace = null;
+        }
+    }
+
     private function addSymbol(string $name): void
     {
-        if ($this->context->getSymbol($name) === null) {
-            // We only trigger scrambling if it's not already in the map.
-            // This pre-fills the symbol map with declarations.
-            $scrambled = $this->context->scrambler->scramble($name);
-            $this->context->setSymbol($name, $scrambled);
+        if (str_starts_with($name, '__')) {
+            return;
         }
+
+        // For classes and functions, we might want to store the FQN
+        // But for methods and properties, we usually store the short name because of polymorphism.
+        
+        // Let's keep it simple: if it's a class-like or function, use FQN if in namespace.
+        // Actually, many obfuscators just use short names for everything and hope for the best, 
+        // or they use a more sophisticated name resolution.
+        
+        // If we use FQN for classes, we must also resolve them in IdentifierScrambler.
+        $this->context->generateUniqueSymbol($name);
     }
 }

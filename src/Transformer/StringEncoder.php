@@ -52,17 +52,45 @@ final class StringEncoder extends NodeVisitorAbstract implements TransformerInte
         if ($node instanceof String_ && !$node->hasAttribute('encoded')) {
             return $this->encodeString($node);
         }
+
+        if ($node instanceof Node\Scalar\InterpolatedString) {
+            return $this->encodeInterpolatedString($node);
+        }
+
         return null;
     }
 
     private function encodeString(String_ $node): Node
     {
         $value = $node->value;
-        $encoded = base64_encode($this->xorString($value, $this->key));
+        return $this->createDecodeCall($value);
+    }
 
-        $encodedNode = new String_(base64_encode($value)); // Simpler for now or keep XOR
-        // Wait, I should use the XOR logic as before but ensure it's not in constant expressions.
+    private function encodeInterpolatedString(Node\Scalar\InterpolatedString $node): Node
+    {
+        $parts = [];
+        foreach ($node->parts as $part) {
+            if ($part instanceof Node\InterpolatedStringPart) {
+                $parts[] = $this->createDecodeCall($part->value);
+            } else {
+                $parts[] = $part;
+            }
+        }
 
+        if (empty($parts)) {
+            return new String_('');
+        }
+
+        $concat = array_shift($parts);
+        foreach ($parts as $part) {
+            $concat = new Node\Expr\BinaryOp\Concat($concat, $part);
+        }
+
+        return $concat;
+    }
+
+    private function createDecodeCall(string $value): Node
+    {
         $encoded = base64_encode($this->xorString($value, $this->key));
 
         $encodedNode = new String_($encoded);
