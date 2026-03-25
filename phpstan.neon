@@ -1,0 +1,10 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+    tmpDir: .phpstan.cache
+    ignoreErrors:
+        -
+            message: '#Function test not found\.#'
+            path: tests/Unit/Transformer/

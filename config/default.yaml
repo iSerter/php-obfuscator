@@ -1,0 +1,48 @@
+# iserter/php-obfuscator default configuration
+
+obfuscator:
+  # Target PHP version for parser
+  # Supports: 7.4, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5
+  php_version: "8.5"
+
+  # Scrambler mode: random, hex, numeric
+  # random:  Random characters (e.g. _vXyZ1)
+  # hex:     Hexadecimal characters (e.g. _v0a1b2)
+  # numeric: Numeric sequence (e.g. _v1000)
+  scrambler_mode: random
+  scrambler_min_length: 6
+
+  # Transformer toggles
+  strip_comments: true
+  scramble_identifiers: true
+  scramble_variables: true
+  scramble_functions: true
+  scramble_classes: true
+  scramble_constants: true
+  scramble_methods: true
+  scramble_properties: true
+  scramble_namespaces: false
+  encode_strings: true
+  flatten_control_flow: true
+  shuffle_statements: true
+
+  # Shuffle settings
+  shuffle_chunk_mode: ratio    # fixed | ratio
+  shuffle_chunk_size: 3
+  shuffle_chunk_ratio: 20
+
+  # Ignore lists (exact names)
+  ignore_variables: []
+  ignore_functions: []
+  ignore_classes: []
+  ignore_constants: []
+  
+  # Ignore lists (prefix patterns)
+  ignore_variables_prefix: []
+  ignore_functions_prefix: []
+  ignore_classes_prefix: []
+
+  # Output customization
+  # Inject a custom comment at the top of every obfuscated file
+  user_comment: ""
+  strip_indentation: true
