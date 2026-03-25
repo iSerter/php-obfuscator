@@ -42,9 +42,38 @@ final class Obfuscator implements ObfuscatorInterface
 
         if ($context->config->userComment !== '') {
             $comment = "/*\n" . $context->config->userComment . "\n*/\n";
-            $obfuscatedCode = $comment . $obfuscatedCode;
+            $obfuscatedCode = $this->insertCommentAfterOpeningStatements($obfuscatedCode, $comment);
         }
 
         return $obfuscatedCode;
+    }
+
+    /**
+     * Insert a comment block after <?php and after declare(strict_types=1) if present.
+     *
+     * This ensures the comment does not appear before the opening PHP tag
+     * (which would make it plain text) and does not precede a declare
+     * statement (which must be the very first statement in the file).
+     */
+    private function insertCommentAfterOpeningStatements(string $code, string $comment): string
+    {
+        // Match the opening <?php tag, optional whitespace, and an optional declare(strict_types=…) statement.
+        // The declare pattern accounts for varied whitespace/formatting the printer may produce.
+        $pattern = '/^(<\?php\b[^\S\n]*\n?)(\s*declare\s*\(\s*strict_types\s*=\s*[^)]*\)\s*;\s*\n?)?/i';
+
+        if (preg_match($pattern, $code, $matches)) {
+            $preamble = $matches[0]; // everything matched (<?php + optional declare)
+            $rest = substr($code, strlen($preamble));
+
+            // Ensure there is a newline separating the preamble from the comment
+            if ($preamble !== '' && !str_ends_with($preamble, "\n")) {
+                $preamble .= "\n";
+            }
+
+            return $preamble . $comment . $rest;
+        }
+
+        // Fallback: if the pattern didn't match (unexpected format), prepend as before.
+        return $comment . $code;
     }
 }
