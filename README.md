@@ -111,6 +111,10 @@ The obfuscator will warn you if it detects patterns that might break during scra
 
 Use the `ignore_` configuration options to exclude symbols used in these dynamic contexts.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, commit conventions, and how to submit a pull request.
+
 ## License
 
 MIT
