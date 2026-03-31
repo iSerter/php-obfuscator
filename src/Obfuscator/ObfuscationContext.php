@@ -18,6 +18,9 @@ final class ObfuscationContext
     /** @var array<string, string> */
     private array $reverseMap = [];
 
+    /** @var array<string, true> Symbols collected from function declarations */
+    private array $functionSymbols = [];
+
     public ?string $currentFilePath = null;
 
     public function __construct(
@@ -62,6 +65,16 @@ final class ObfuscationContext
 
         $this->setSymbol($original, $scrambled);
         return $scrambled;
+    }
+
+    public function addFunctionSymbol(string $name): void
+    {
+        $this->functionSymbols[$name] = true;
+    }
+
+    public function isFunctionSymbol(string $name): bool
+    {
+        return isset($this->functionSymbols[$name]);
     }
 
     /**

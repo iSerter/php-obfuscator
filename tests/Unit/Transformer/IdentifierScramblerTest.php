@@ -10,6 +10,7 @@ use ISerter\PhpObfuscator\Parser\ParserFactory;
 use ISerter\PhpObfuscator\Printer\ObfuscatedPrinter;
 use ISerter\PhpObfuscator\Scrambler\NumericScrambler;
 use ISerter\PhpObfuscator\Transformer\IdentifierScrambler;
+use ISerter\PhpObfuscator\Transformer\SymbolCollector;
 use PHPUnit\Framework\TestCase;
 
 final class IdentifierScramblerTest extends TestCase
@@ -56,6 +57,10 @@ PHP;
         $stmts = $parser->parse($code);
         $this->assertNotNull($stmts);
 
+        // SymbolCollector must run first to register function symbols
+        $collector = new SymbolCollector();
+        $stmts = $collector->transform($stmts, $context);
+
         $transformer = new IdentifierScrambler();
         $transformed = $transformer->transform($stmts, $context);
 
@@ -64,6 +69,5 @@ PHP;
 
         $this->assertStringNotContainsString('myFunc', $output);
         $this->assertStringContainsString('function _v1000', $output);
-        // Note: For now function calls are not scrambled in IdentifierScrambler
     }
 }

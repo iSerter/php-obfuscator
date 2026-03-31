@@ -72,10 +72,13 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
                     $this->addWarning("eval() detected. Code inside eval() will not be obfuscated and might fail to find scrambled symbols.");
                 }
 
-                // ONLY scramble if functions scrambling is enabled AND it's in our symbol map
-                if ($this->context->config->scrambleFunctions && $this->context->getSymbol($originalName) !== null) {
+                // ONLY scramble if functions scrambling is enabled AND it was collected as a function declaration.
+                // Checking isFunctionSymbol() prevents variable names like $count from causing count() to be scrambled.
+                if ($this->context->config->scrambleFunctions && $this->context->isFunctionSymbol($originalName)) {
                     $node->name = new Name($this->getScrambledName($originalName));
                 }
+                // Mark function call name so the catch-all Name handler (for class usages) skips it
+                $node->name->setAttribute('is_func_call_name', true);
             } else {
                 $this->addWarning("Dynamic function call detected. Scrambling might break this.");
             }
@@ -129,8 +132,8 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
         // Each usage type is gated by the matching config flag so that e.g.
         // variable scrambling doesn't accidentally rename property accesses.
 
-        // Method calls: $obj->method() / Class::method()
-        if ($node instanceof MethodCall) {
+        // Method calls: $obj->method() / $obj?->method() / Class::method()
+        if ($node instanceof MethodCall || $node instanceof Node\Expr\NullsafeMethodCall) {
             if (!($node->name instanceof Identifier)) {
                 $this->addWarning("Dynamic method call detected. Scrambling might break this.");
             } elseif ($this->context->config->scrambleMethods) {
@@ -149,8 +152,8 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
             }
         }
 
-        // Property fetches: $obj->prop
-        if ($node instanceof Node\Expr\PropertyFetch) {
+        // Property fetches: $obj->prop / $obj?->prop
+        if ($node instanceof Node\Expr\PropertyFetch || $node instanceof Node\Expr\NullsafePropertyFetch) {
             if (!($node->name instanceof Identifier)) {
                 $this->addWarning("Dynamic property fetch detected. Scrambling might break this.");
             } elseif ($this->context->config->scrambleProperties) {
@@ -194,7 +197,8 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
         }
 
         // Names (usages of classes in extends, implements, type hints, new, etc.)
-        if ($node instanceof Name) {
+        // Skip Name nodes that belong to function calls — those are handled by the FuncCall handler above.
+        if ($node instanceof Name && !$node->hasAttribute('is_func_call_name')) {
             $originalName = $node->toString();
             if ($this->context->config->scrambleClasses) {
                 $scrambled = $this->context->getSymbol($originalName);

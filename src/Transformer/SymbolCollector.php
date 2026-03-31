@@ -52,6 +52,7 @@ final class SymbolCollector extends NodeVisitorAbstract implements TransformerIn
         } elseif ($node instanceof Function_) {
             if ($config->scrambleFunctions) {
                 $this->addSymbol($node->name->toString());
+                $this->context->addFunctionSymbol($node->name->toString());
             }
         } elseif ($node instanceof ClassMethod) {
             if ($config->scrambleMethods) {
