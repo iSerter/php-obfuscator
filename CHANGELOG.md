@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/iSerter/php-obfuscator/compare/v0.1.2...v0.1.3) (2026-03-31)
+
+
+### Miscellaneous Chores
+
+* remove Docker build/push steps from release workflow ([2ed253c](https://github.com/iSerter/php-obfuscator/commit/2ed253c5108f4eb4b053b3a827e322e267d0b677))
+
 ## [0.1.2](https://github.com/iSerter/php-obfuscator/compare/v0.1.1...v0.1.2) (2026-03-31)
 
 
