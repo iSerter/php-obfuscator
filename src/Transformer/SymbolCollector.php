@@ -10,8 +10,11 @@ use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Const_;
+use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Function_;
+use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
+use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
@@ -38,30 +41,48 @@ final class SymbolCollector extends NodeVisitorAbstract implements TransformerIn
 
     public function enterNode(Node $node): ?Node
     {
+        $config = $this->context->config;
+
         if ($node instanceof Node\Stmt\Namespace_) {
             $this->currentNamespace = $node->name ? $node->name->toString() : null;
         } elseif (($node instanceof Class_ || $node instanceof Interface_ || $node instanceof Trait_ || $node instanceof Enum_) && $node->name !== null) {
-            $this->addSymbol($node->name->toString());
+            if ($config->scrambleClasses) {
+                $this->addSymbol($node->name->toString());
+            }
         } elseif ($node instanceof Function_) {
-            $this->addSymbol($node->name->toString());
+            if ($config->scrambleFunctions) {
+                $this->addSymbol($node->name->toString());
+            }
         } elseif ($node instanceof ClassMethod) {
-            $this->addSymbol($node->name->toString());
+            if ($config->scrambleMethods) {
+                $this->addSymbol($node->name->toString());
+            }
         } elseif ($node instanceof Property) {
-            foreach ($node->props as $prop) {
-                $this->addSymbol($prop->name->toString());
+            if ($config->scrambleProperties) {
+                foreach ($node->props as $prop) {
+                    $this->addSymbol($prop->name->toString());
+                }
             }
         } elseif ($node instanceof Const_) {
-            foreach ($node->consts as $const) {
-                $this->addSymbol($const->name->toString());
+            if ($config->scrambleConstants) {
+                foreach ($node->consts as $const) {
+                    $this->addSymbol($const->name->toString());
+                }
             }
         } elseif ($node instanceof Node\Stmt\ClassConst) {
-            foreach ($node->consts as $const) {
-                $this->addSymbol($const->name->toString());
+            if ($config->scrambleConstants) {
+                foreach ($node->consts as $const) {
+                    $this->addSymbol($const->name->toString());
+                }
             }
         } elseif ($node instanceof Node\Stmt\EnumCase) {
-            $this->addSymbol($node->name->toString());
+            if ($config->scrambleClasses) {
+                $this->addSymbol($node->name->toString());
+            }
         } elseif ($node instanceof Variable && is_string($node->name)) {
-            $this->addSymbol($node->name);
+            if ($config->scrambleVariables) {
+                $this->addSymbol($node->name);
+            }
         }
 
         return null;
@@ -80,14 +101,6 @@ final class SymbolCollector extends NodeVisitorAbstract implements TransformerIn
             return;
         }
 
-        // For classes and functions, we might want to store the FQN
-        // But for methods and properties, we usually store the short name because of polymorphism.
-        
-        // Let's keep it simple: if it's a class-like or function, use FQN if in namespace.
-        // Actually, many obfuscators just use short names for everything and hope for the best, 
-        // or they use a more sophisticated name resolution.
-        
-        // If we use FQN for classes, we must also resolve them in IdentifierScrambler.
         $this->context->generateUniqueSymbol($name);
     }
 }

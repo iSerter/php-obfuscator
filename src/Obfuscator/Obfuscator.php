@@ -45,7 +45,50 @@ final class Obfuscator implements ObfuscatorInterface
             $obfuscatedCode = $this->insertCommentAfterOpeningStatements($obfuscatedCode, $comment);
         }
 
+        // Inject the _d() string decoder when encode_strings is active.
+        if ($context->config->encodeStrings) {
+            $obfuscatedCode = $this->injectStringDecoderRuntime($obfuscatedCode);
+        }
+
         return $obfuscatedCode;
+    }
+
+    /**
+     * Inject the _d() string decoder function into the obfuscated output.
+     *
+     * The function is defined within the current namespace scope so that
+     * unqualified _d() calls resolve correctly via PHP namespace resolution.
+     * The function_exists() guard uses __NAMESPACE__ to build the FQN,
+     * ensuring only one definition per namespace.
+     *
+     * Placement:
+     *  - After the namespace declaration (if present) so _d() is in that namespace
+     *  - After <?php / declare (if no namespace) so _d() is in the global namespace
+     */
+    private function injectStringDecoderRuntime(string $code): string
+    {
+        $runtime = "if (!function_exists((__NAMESPACE__ ? __NAMESPACE__ . '\\\\' : '') . '_d')) { function _d(string \$d, string \$k): string { \$b = base64_decode(\$d); \$o = ''; for (\$i = 0, \$l = strlen(\$b); \$i < \$l; \$i++) { \$o .= \$b[\$i] ^ \$k[\$i % strlen(\$k)]; } return \$o; } }";
+
+        // If there is a namespace declaration, inject AFTER it so _d() lives in
+        // that namespace and unqualified calls resolve correctly.
+        if (preg_match('/^(.*?namespace\s+[a-zA-Z0-9_\\\\]+\s*;\s*\n?)/s', $code, $matches)) {
+            $before = $matches[1];
+            $after = substr($code, strlen($before));
+            return $before . $runtime . "\n" . $after;
+        }
+
+        // No namespace — inject after <?php and optional declare.
+        $pattern = '/^(<\?php\b[^\S\n]*\n?)(\s*declare\s*\(\s*strict_types\s*=\s*[^)]*\)\s*;\s*\n?)?/i';
+        if (preg_match($pattern, $code, $matches)) {
+            $preamble = $matches[0];
+            $rest = substr($code, strlen($preamble));
+            if ($preamble !== '' && !str_ends_with($preamble, "\n")) {
+                $preamble .= "\n";
+            }
+            return $preamble . $runtime . "\n" . $rest;
+        }
+
+        return $runtime . "\n" . $code;
     }
 
     /**

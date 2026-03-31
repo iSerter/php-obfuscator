@@ -101,43 +101,10 @@ final class ObfuscationPipelineTest extends TestCase
 
     private function runCodeInSubprocess(string $code): string
     {
-        $decoder = <<<'PHP'
-if (!function_exists('_d')) {
-    function _d($data, $key) {
-        $decoded = base64_decode($data);
-        $out = '';
-        for ($i = 0; $i < strlen($decoded); $i++) {
-            $out .= $decoded[$i] ^ $key[$i % strlen($key)];
-        }
-        return $out;
-    }
-}
-PHP;
+        // The Obfuscator now auto-injects the _d() runtime, so no manual
+        // decoder injection is needed. Just run the obfuscated code as-is.
         $tempFile = tempnam(sys_get_temp_dir(), 'obf');
         $this->assertIsString($tempFile);
-
-        // Remove existing declare(strict_types=1) and add it at the very top
-        $code = preg_replace('/declare\s*\(\s*strict_types\s*=\s*[01]\s*\)\s*;/', '', $code);
-        $this->assertIsString($code);
-
-        if (strpos($code, '<?php') === false) {
-            $code = "<?php\ndeclare(strict_types=1);\n" . $code;
-        } else {
-            $code = str_replace('<?php', "<?php\ndeclare(strict_types=1);\n", $code);
-        }
-
-        // If there is a namespace, we MUST put the decoder after it, or use global namespace for decoder.
-        // Actually, we can just put the decoder in the global namespace before anything else if we use { } for everything.
-        // But the printer doesn't use { } for namespaces by default.
-
-        if (preg_match('/namespace\s+([a-zA-Z0-9_\\\\]+)\s*;/', $code, $matches)) {
-            $namespace = $matches[0];
-            $code = str_replace($namespace, $namespace . "\n" . $decoder . "\n", $code);
-        } else {
-            // No namespace, just inject after <?php / declare
-            $code = preg_replace('/declare\s*\(\s*strict_types\s*=\s*[01]\s*\)\s*;/', "$0\n" . $decoder . "\n", $code);
-        }
-        $this->assertIsString($code);
 
         file_put_contents($tempFile, $code);
 
