@@ -32,6 +32,9 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
     private const RESERVED_NAMES = [
         'true', 'false', 'null',
         'self', 'parent', 'static',
+        'int', 'float', 'string', 'bool',
+        'array', 'object', 'mixed', 'void', 'never',
+        'iterable', 'callable',
     ];
 
     private ObfuscationContext $context;

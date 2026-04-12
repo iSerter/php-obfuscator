@@ -109,6 +109,38 @@ PHP;
         $this->assertSame('hello', $val);
     }
 
+    public function testSkipsStaticVariableInitializers(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Cache {
+    public function getNames(): array {
+        static $names = ['en' => 'English', 'de' => 'German', 'fr' => 'French'];
+        return $names;
+    }
+}
+PHP;
+        $parserFactory = new ParserFactory();
+        $config = new Configuration();
+        $scrambler = new NumericScrambler();
+        $context = new ObfuscationContext($config, $scrambler);
+        $parser = $parserFactory->createParser($config);
+        $stmts = $parser->parse($code);
+        $this->assertNotNull($stmts);
+
+        $transformer = new StringEncoder();
+        $transformed = $transformer->transform($stmts, $context);
+
+        $printer = new ObfuscatedPrinter();
+        $output = $printer->prettyPrintFile($transformed);
+
+        // Strings inside static variable initializers must NOT be encoded
+        $this->assertStringContainsString('English', $output);
+        $this->assertStringContainsString('German', $output);
+        $this->assertStringContainsString('French', $output);
+        $this->assertStringNotContainsString('_d(', $output);
+    }
+
     public function testEncodesInterpolatedString(): void
     {
         $code = <<<'PHP'

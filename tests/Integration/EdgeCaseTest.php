@@ -426,4 +426,72 @@ PHP;
         $this->assertStringContainsString('KEEP_THIS', $obfuscated);
         $this->assertStringNotContainsString('SCRAMBLE_THIS', $obfuscated);
     }
+
+    // ── Static variable initializers with encode_strings ────────────
+
+    /**
+     * Strings in static variable initializers must not be wrapped in _d() calls
+     * because PHP requires compile-time constant expressions for static defaults.
+     */
+    public function testStaticVarInitializersNotEncodedWithEncodeStrings(): void
+    {
+        $code = <<<'PHP'
+<?php
+class LangPack {
+    public function getNames(): array {
+        static $names = ['en' => 'English', 'de' => 'German'];
+        return $names;
+    }
+    public function greet(): string {
+        return "hello";
+    }
+}
+$l = new LangPack();
+echo implode(',', $l->getNames()) . "\n";
+echo $l->greet() . "\n";
+PHP;
+
+        $obfuscated = $this->obfuscate($code, ['encode_strings' => true]);
+
+        // Static initializer strings must remain as plain literals
+        $this->assertStringContainsString('English', $obfuscated);
+        $this->assertStringContainsString('German', $obfuscated);
+
+        // Non-static strings should be encoded
+        $this->assertStringNotContainsString('"hello"', $obfuscated);
+
+        // Functional equivalence
+        $originalOutput = $this->runCodeInSubprocess($code);
+        $obfuscatedOutput = $this->runCodeInSubprocess($obfuscated);
+        $this->assertSame(trim($originalOutput), trim($obfuscatedOutput));
+    }
+
+    /**
+     * Static variable with scalar default (not just arrays).
+     */
+    public function testStaticVarScalarInitializerNotEncoded(): void
+    {
+        $code = <<<'PHP'
+<?php
+function counter(): string {
+    static $label = 'count';
+    static $n = 0;
+    $n++;
+    return "$label: $n";
+}
+echo counter() . "\n";
+echo counter() . "\n";
+echo counter() . "\n";
+PHP;
+
+        $obfuscated = $this->obfuscate($code, ['encode_strings' => true]);
+
+        // The static string default must remain as a plain literal
+        $this->assertStringContainsString("'count'", $obfuscated);
+
+        // Functional equivalence
+        $originalOutput = $this->runCodeInSubprocess($code);
+        $obfuscatedOutput = $this->runCodeInSubprocess($obfuscated);
+        $this->assertSame(trim($originalOutput), trim($obfuscatedOutput));
+    }
 }
