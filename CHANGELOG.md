@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/iSerter/php-obfuscator/compare/v0.1.3...v0.1.4) (2026-04-12)
+
+
+### Bug Fixes
+
+* enhance string encoding to skip static variable initializers ([6d8340d](https://github.com/iSerter/php-obfuscator/commit/6d8340d00bc6a9bccc0f40cb114cbd37459e7c92))
+* implement reserved names handling in IdentifierScrambler ([a8fcbd3](https://github.com/iSerter/php-obfuscator/commit/a8fcbd32dfeb1230ca2ab21473608af2565286ac))
+
 ## [0.1.3](https://github.com/iSerter/php-obfuscator/compare/v0.1.2...v0.1.3) (2026-03-31)
 
 
