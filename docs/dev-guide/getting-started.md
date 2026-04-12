@@ -91,6 +91,8 @@ docker run --rm -v $(pwd):/app iserter/php-obfuscator src/ -o out/
 -   `src/`: The directory to obfuscate.
 -   `-o out/`: The output directory.
 
+The image supports both `linux/amd64` and `linux/arm64`. For available tags, building from source, and more, see the [Docker Guide](docker.md).
+
 ## GitHub Action Integration
 
 To automate obfuscation in your CI/CD pipeline, add this step to your GitHub Actions workflow:

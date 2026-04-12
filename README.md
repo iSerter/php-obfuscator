@@ -26,13 +26,15 @@ You can run the obfuscator without installing PHP or Composer locally:
 docker run --rm -v $(pwd):/app iserter/php-obfuscator src/ -o out/
 ```
 
+The Docker image is published as a multi-arch manifest supporting both `linux/amd64` and `linux/arm64`. It will work on GitHub Actions runners, Intel/AMD machines, and Apple Silicon (via Rosetta or native). See the [Docker Guide](docs/dev-guide/docker.md) for more details.
+
 ## GitHub Action
 
 Protect your code automatically in your CI/CD pipeline:
 
 ```yaml
 steps:
-  - uses: iserter/php-obfuscator@v0.1.3
+  - uses: iserter/php-obfuscator@v0.1.4
     with:
       source: 'src'
       output: 'dist'
