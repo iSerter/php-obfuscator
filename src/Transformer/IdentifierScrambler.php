@@ -23,6 +23,17 @@ use PhpParser\NodeVisitorAbstract;
 
 final class IdentifierScrambler extends NodeVisitorAbstract implements TransformerInterface
 {
+    /**
+     * PHP reserved names that must never be scrambled when encountered as Name nodes.
+     * These appear as Name nodes in ConstFetch (true/false/null) and in type
+     * declarations (self/parent/static), but share the symbol map namespace with
+     * user-defined variables/methods that may have the same identifier.
+     */
+    private const RESERVED_NAMES = [
+        'true', 'false', 'null',
+        'self', 'parent', 'static',
+    ];
+
     private ObfuscationContext $context;
 
     /**
@@ -200,6 +211,13 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
         // Skip Name nodes that belong to function calls — those are handled by the FuncCall handler above.
         if ($node instanceof Name && !$node->hasAttribute('is_func_call_name')) {
             $originalName = $node->toString();
+
+            // Never scramble PHP reserved names — they may share symbol-map keys
+            // with user variables (e.g. $true, $self) but must stay intact when
+            // used as constants (true/false/null) or type keywords (self/parent/static).
+            if (in_array(strtolower($originalName), self::RESERVED_NAMES, true)) {
+                return null;
+            }
             if ($this->context->config->scrambleClasses) {
                 $scrambled = $this->context->getSymbol($originalName);
                 if ($scrambled !== null) {
