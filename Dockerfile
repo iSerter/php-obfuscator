@@ -26,6 +26,7 @@ COPY --from=composer /app/vendor ./vendor
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 RUN composer dump-autoload --optimize --no-dev
 
-# Set the entrypoint to the obfuscate binary
-ENTRYPOINT ["php", "/app/bin/obfuscate"]
+# Entrypoint filters empty args from GitHub Actions
+RUN chmod +x /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["--help"]
