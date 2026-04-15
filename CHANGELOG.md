@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/iSerter/php-obfuscator/compare/v0.1.4...v0.1.5) (2026-04-15)
+
+
+### Miscellaneous Chores
+
+* update Dockerfile and add entrypoint script ([07d1912](https://github.com/iSerter/php-obfuscator/commit/07d1912029f2d821c5ab6dc2b0f2fd981c53dc46))
+
 ## [0.1.4](https://github.com/iSerter/php-obfuscator/compare/v0.1.3...v0.1.4) (2026-04-12)
 
 
