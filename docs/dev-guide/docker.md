@@ -23,7 +23,7 @@ docker run --rm -v $(pwd):/app iserter/php-obfuscator src/ -o out/ --clean --for
 | Tag      | Description                                |
 |----------|--------------------------------------------|
 | `latest` | Most recent stable release                 |
-| `0.1.4`  | Pinned to a specific version               |
+| `0.1.5`  | Pinned to a specific version               |
 
 We recommend pinning to a version tag in CI pipelines to avoid surprises from new releases.
 
