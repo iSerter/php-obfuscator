@@ -201,8 +201,17 @@ final class IdentifierScrambler extends NodeVisitorAbstract implements Transform
         }
 
         // Named arguments: func(name: $val)
+        //
+        // A named-argument label refers to the *callee's* parameter name, so it may
+        // only be scrambled when the callee is part of the obfuscated source — i.e.
+        // the label matches a parameter that was itself renamed. Scrambling a label
+        // that targets non-obfuscated code (vendor packages, PHP/WordPress core)
+        // produces a call PHP cannot resolve ("Unknown named parameter $_0x...").
+        // Gating on isParamName() ensures we only rename labels that point at an
+        // obfuscated parameter; labels like `config:`/`timeout:` aimed at a vendor
+        // SDK are left intact even when a same-named local variable was scrambled.
         if ($node instanceof Arg && $node->name instanceof Identifier) {
-            if ($this->context->config->scrambleVariables) {
+            if ($this->context->config->scrambleVariables && $this->context->isParamName($node->name->toString())) {
                 $scrambled = $this->context->getSymbol($node->name->toString());
                 if ($scrambled !== null) {
                     $node->name = new Identifier($scrambled);

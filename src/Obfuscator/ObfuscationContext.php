@@ -21,6 +21,16 @@ final class ObfuscationContext
     /** @var array<string, true> Symbols collected from function declarations */
     private array $functionSymbols = [];
 
+    /**
+     * @var array<string, true> Parameter names declared by callables that ARE being
+     * obfuscated (functions/methods/closures/arrow fns). Used to decide whether a
+     * named-argument label (`foo(name: $v)`) may be scrambled: a label is only safe
+     * to rename when it targets an obfuscated parameter. Labels that target
+     * non-obfuscated code (vendor packages, PHP/WordPress core) must stay intact,
+     * otherwise PHP throws "Unknown named parameter".
+     */
+    private array $paramNames = [];
+
     public ?string $currentFilePath = null;
 
     public function __construct(
@@ -75,6 +85,16 @@ final class ObfuscationContext
     public function isFunctionSymbol(string $name): bool
     {
         return isset($this->functionSymbols[$name]);
+    }
+
+    public function addParamName(string $name): void
+    {
+        $this->paramNames[$name] = true;
+    }
+
+    public function isParamName(string $name): bool
+    {
+        return isset($this->paramNames[$name]);
     }
 
     /**

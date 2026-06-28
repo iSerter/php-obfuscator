@@ -80,6 +80,14 @@ final class SymbolCollector extends NodeVisitorAbstract implements TransformerIn
             if ($config->scrambleClasses) {
                 $this->addSymbol($node->name->toString());
             }
+        } elseif ($node instanceof Node\Param) {
+            // Record parameter names of obfuscated callables so the IdentifierScrambler
+            // knows which named-argument labels are safe to scramble. A label is only
+            // renamed when it targets a parameter that was itself renamed; labels that
+            // point at non-obfuscated code (vendor/core) must be left untouched.
+            if ($config->scrambleVariables && $node->var instanceof Variable && is_string($node->var->name)) {
+                $this->context->addParamName($node->var->name);
+            }
         } elseif ($node instanceof Variable && is_string($node->name)) {
             if ($config->scrambleVariables) {
                 $this->addSymbol($node->name);
