@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/iSerter/php-obfuscator/compare/v0.1.5...v0.1.6) (2026-06-28)
+
+
+### Bug Fixes
+
+* enhance parameter name handling in obfuscation ([e98b5f6](https://github.com/iSerter/php-obfuscator/commit/e98b5f6f59d880979d6e30b6e2860cca409dbb51))
+
 ## [0.1.5](https://github.com/iSerter/php-obfuscator/compare/v0.1.4...v0.1.5) (2026-04-15)
 
 
