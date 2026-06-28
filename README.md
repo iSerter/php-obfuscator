@@ -34,7 +34,7 @@ Protect your code automatically in your CI/CD pipeline:
 
 ```yaml
 steps:
-  - uses: iserter/php-obfuscator@v0.1.4
+  - uses: iserter/php-obfuscator@v0.1.6
     with:
       source: 'src'
       output: 'dist'
